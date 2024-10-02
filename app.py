@@ -102,12 +102,11 @@ st.sidebar.info(
 # Add your name or team name
 st.sidebar.title("Created by")
 st.sidebar.info(
-    "Your Name/Team Name"
+    "Sidharth"
 )
 
 # You can add more sections like this to the sidebar
-st.sidebar.title("Data Source")
+st.sidebar.title("Data Source & Code")
 st.sidebar.info(
-    "The model was trained on [Your Dataset Name]. "
-    "You can find more information about the dataset [here](your_dataset_link)."
+    "You can find more information about the dataset and code on the github repo"
 )
