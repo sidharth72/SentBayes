@@ -7,106 +7,144 @@ import joblib
 from preprocess import preprocess_text, download_nltk_data
 from predict import predict
 
-
-# Set page config
-st.set_page_config(page_title="Sentiment Analysis App", page_icon="😊", layout="wide")
-
-
 # Ensure NLTK data is downloaded
 download_nltk_data()
 
 # Load the vectorizer
 vectorizer = joblib.load('model/tfidf_vec.pkl')
 
+# Page configuration
+st.set_page_config(
+    page_title="SentBayes",
+    page_icon="🎭",
+    layout="centered"
+)
+
 # Custom CSS
 st.markdown("""
 <style>
-    .reportview-container {
-        background: #f0f2f6
-    }
+    /* Main container */
     .main {
-        background: #ffffff;
-        padding: 3rem;
-        border-radius: 10px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        padding: 2rem;
     }
+    
+    /* Headers */
+    h1 {
+        font-family: 'Helvetica Neue', sans-serif;
+        font-weight: 700;
+        color: #1E1E1E;
+    }
+    
+    /* Tabs styling */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 24px;
+    }
+    .stTabs [data-baseweb="tab"] {
+        height: 50px;
+        white-space: pre-wrap;
+        background-color: transparent;
+        border-radius: 4px;
+        color: #1E1E1E;
+        font-size: 16px;
+    }
+    .stTabs [aria-selected="true"] {
+        background-color: #f0f2f6;
+    }
+    
+    /* Button styling */
     .stButton>button {
-        background-color: #4CAF50;
+        width: 100%;
+        border-radius: 4px;
+        height: 3em;
+        background-color: #1E1E1E;
         color: white;
-        font-weight: bold;
+        border: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    .stButton>button:hover {
+        background-color: #333333;
+        border: none;
+    }
+    
+    /* Text area styling */
+    .stTextArea textarea {
+        border-radius: 4px;
+        border-color: #E0E0E0;
+    }
+    
+    /* Card-like container for results */
+    .sentiment-result {
+        padding: 1.5rem;
+        border-radius: 8px;
+        background-color: #f8f9fa;
+        margin-top: 1rem;
+    }
+    
+    /* Sidebar styling */
+    .css-1d391kg {
+        padding-top: 3rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Streamlit app
-st.title('🎭 Sentiment Analysis with Naive Bayes')
+# Main app layout
+st.title('SentBayes')
+st.markdown("##### A minimalist sentiment analysis tool")
 
 # Create tabs
-tab1, tab2 = st.tabs(["Analyze Text", "Try Examples"])
+tab1, tab2 = st.tabs(["✏️ Analyze", "🔍 Examples"])
+
+def predict_and_display(text):
+    with st.spinner('Analyzing...'):
+        preprocessed_text = preprocess_text(text)
+        preprocessed_text_counts = vectorizer.transform([preprocessed_text])
+        predicted_sentiment = predict(preprocessed_text_counts)
+        
+        st.markdown(f"""
+        <div class="sentiment-result">
+            <h3 style="margin-bottom: 0.5rem;">Result</h3>
+            <p style="font-size: 18px; margin-bottom: 0.5rem;">{predicted_sentiment[0]} 
+            {'😊' if predicted_sentiment[0] == 'Positive' else '😔'}</p>
+        </div>
+        """, unsafe_allow_html=True)
 
 with tab1:
-    st.header("Analyze Your Own Text")
-    # Text input area
-    text_input = st.text_area('Enter text:', '', height=150)
-
-    # Predict button
-    if st.button('Predict Sentiment'):
-        if text_input.strip() == '':
-            st.error('Please enter some text.')
+    text_input = st.text_area('Enter your text here:', height=150, 
+                              placeholder="Type or paste your text for analysis...")
+    
+    if st.button('Analyze Sentiment'):
+        if text_input.strip():
+            predict_and_display(text_input)
         else:
-            with st.spinner('Analyzing...'):
-                # Preprocess the input text
-                preprocessed_text = preprocess_text(text_input)
-                
-                # Vectorize the preprocessed text
-                preprocessed_text_counts = vectorizer.transform([preprocessed_text])
-                
-                # Predict sentiment
-                predicted_sentiment = predict(preprocessed_text_counts)
-                
-                # Display predicted sentiment
-                if predicted_sentiment[0] == 'Positive':
-                    st.success(f'Predicted Sentiment: {predicted_sentiment[0]} 😊')
-                else:
-                    st.warning(f'Predicted Sentiment: {predicted_sentiment[0]} 😔')
+            st.error('Please enter some text.')
 
 with tab2:
-    st.header("Try These Examples")
     examples = [
-        "I absolutely loved the movie! The acting was superb and the plot kept me engaged throughout.",
-        "The customer service was terrible. I waited for hours and still didn't get my issue resolved.",
-        "The new restaurant in town is okay. The food is decent but a bit overpriced.",
-        "I can't believe how amazing this product is! It has completely changed my life for the better."
+        "I absolutely loved the movie! The acting was superb.",
+        "The customer service was terrible. I waited for hours.",
+        "The new restaurant is okay. The food is decent but overpriced.",
+        "This product has completely changed my life for the better!"
     ]
     
     for i, example in enumerate(examples, 1):
-        if st.button(f"Example {i}"):
-            st.text_area("Text:", example, height=100)
-            with st.spinner('Analyzing...'):
-                preprocessed_text = preprocess_text(example)
-                preprocessed_text_counts = vectorizer.transform([preprocessed_text])
-                predicted_sentiment = predict(preprocessed_text_counts)
-                
-                if predicted_sentiment[0] == 'Positive':
-                    st.success(f'Predicted Sentiment: {predicted_sentiment[0]} 😊')
-                else:
-                    st.warning(f'Predicted Sentiment: {predicted_sentiment[0]} 😔')
+        col1, col2 = st.columns([3, 1])
+        with col1:
+            st.text_area(f"Example {i}", example, height=100, key=f"example_{i}")
+        with col2:
+            if st.button('Try', key=f"button_{i}"):
+                predict_and_display(example)
 
-# Add information about the model
-st.sidebar.title("About")
-st.sidebar.info(
-    "This app uses a Naive Bayes model to predict the sentiment of text. "
-    "It classifies text as either Positive or Negative."
-)
-
-# Add your name or team name
-st.sidebar.title("Created by")
-st.sidebar.info(
-    "Sidharth"
-)
-
-# You can add more sections like this to the sidebar
-st.sidebar.title("Data Source & Code")
-st.sidebar.info(
-    "You can find more information about the dataset and code on the github repo"
-)
+# Sidebar
+with st.sidebar:
+    st.markdown("### About")
+    st.markdown("SentBayes uses Naive Bayes to classify text sentiment as Positive or Negative.")
+    
+    st.markdown("### Accuracy")
+    st.markdown("88% accuracy on test data")
+    
+    st.markdown("### Creator")
+    st.markdown("Sidharth")
+    
+    st.markdown("### Links")
+    st.markdown("[GitHub Repository](https://github.com/yourusername/sentbayes)")
