@@ -7,6 +7,13 @@ import joblib
 from preprocess import preprocess_text, download_nltk_data
 from predict import predict
 
+
+st.set_page_config(
+    page_title="SentBayes",
+    page_icon="🎭",
+    layout="centered"
+)
+
 # Ensure NLTK data is downloaded
 download_nltk_data()
 
@@ -14,11 +21,6 @@ download_nltk_data()
 vectorizer = joblib.load('model/tfidf_vec.pkl')
 
 # Page configuration
-st.set_page_config(
-    page_title="SentBayes",
-    page_icon="🎭",
-    layout="centered"
-)
 
 # Custom CSS
 st.markdown("""
