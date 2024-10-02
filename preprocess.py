@@ -4,17 +4,10 @@ from nltk.corpus import stopwords
 import streamlit as st
 
 # Download required NLTK data
-@st.cache_resource  # This decorator ensures the download only happens once
+@st.cache_resource
 def download_nltk_data():
-    try:
-        nltk.data.find('tokenizers/punkt')
-    except LookupError:
-        nltk.download('punkt')
-    
-    try:
-        nltk.data.find('corpora/stopwords')
-    except LookupError:
-        nltk.download('stopwords')
+    nltk.download('punkt', quiet=True)
+    nltk.download('stopwords', quiet=True)
 
 # Call the download function
 download_nltk_data()
