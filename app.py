@@ -1,18 +1,16 @@
 import streamlit as st
 import pandas as pd
-import nltk
 from nltk.tokenize import word_tokenize
-from nltk.corpus import stopwords
 import joblib
 from preprocess import preprocess_text, download_nltk_data
 from predict import predict
 
-
 st.set_page_config(
-    page_title="SentBayes",
+    page_title="Sentiment Analyzer",
     page_icon="🎭",
     layout="centered"
 )
+
 
 # Ensure NLTK data is downloaded
 download_nltk_data()
@@ -20,133 +18,113 @@ download_nltk_data()
 # Load the vectorizer
 vectorizer = joblib.load('model/tfidf_vec.pkl')
 
-# Page configuration
-
+# Page config
 # Custom CSS
 st.markdown("""
 <style>
-    /* Main container */
-    .main {
-        padding: 2rem;
+    .stApp {
+        max-width: 800px;
+        margin: 0 auto;
     }
-    
-    /* Headers */
-    h1 {
-        font-family: 'Helvetica Neue', sans-serif;
-        font-weight: 700;
-        color: #1E1E1E;
-    }
-    
-    /* Tabs styling */
-    .stTabs [data-baseweb="tab-list"] {
-        gap: 24px;
-    }
-    .stTabs [data-baseweb="tab"] {
-        height: 50px;
-        white-space: pre-wrap;
-        background-color: transparent;
-        border-radius: 4px;
-        color: #1E1E1E;
-        font-size: 16px;
-    }
-    .stTabs [aria-selected="true"] {
+    .example-button {
         background-color: #f0f2f6;
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 10px;
+        margin: 5px 0;
+        cursor: pointer;
+        transition: all 0.2s;
     }
-    
-    /* Button styling */
-    .stButton>button {
-        width: 100%;
-        border-radius: 4px;
-        height: 3em;
-        background-color: #1E1E1E;
-        color: white;
-        border: none;
-        font-weight: 500;
-        transition: all 0.3s ease;
+    .example-button:hover {
+        background-color: #e0e2e6;
+        border-color: #d0d0d0;
     }
-    .stButton>button:hover {
-        background-color: #333333;
-        border: none;
+    .sentiment-box {
+        padding: 20px;
+        border-radius: 5px;
+        margin-top: 20px;
     }
-    
-    /* Text area styling */
+    .positive {
+        background-color: #dcffe4;
+        border: 1px solid #00cc44;
+    }
+    .negative {
+        background-color: #ffe0e0;
+        border: 1px solid #ff4444;
+    }
     .stTextArea textarea {
-        border-radius: 4px;
-        border-color: #E0E0E0;
-    }
-    
-    /* Card-like container for results */
-    .sentiment-result {
-        padding: 1.5rem;
-        border-radius: 8px;
-        background-color: #f8f9fa;
-        margin-top: 1rem;
-    }
-    
-    /* Sidebar styling */
-    .css-1d391kg {
-        padding-top: 3rem;
+        font-size: 16px;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# Main app layout
-st.title('SentBayes')
-st.markdown("##### A minimalist sentiment analysis tool")
+# App title
+st.title('🎭 Sentiment Analyzer')
 
-# Create tabs
-tab1, tab2 = st.tabs(["✏️ Analyze", "🔍 Examples"])
+# Initialize session state for text input
+if 'text_input' not in st.session_state:
+    st.session_state.text_input = ""
 
-def predict_and_display(text):
-    with st.spinner('Analyzing...'):
-        preprocessed_text = preprocess_text(text)
-        preprocessed_text_counts = vectorizer.transform([preprocessed_text])
-        predicted_sentiment = predict(preprocessed_text_counts)
-        
-        st.markdown(f"""
-        <div class="sentiment-result">
-            <h3 style="margin-bottom: 0.5rem;">Result</h3>
-            <p style="font-size: 18px; margin-bottom: 0.5rem;">{predicted_sentiment[0]} 
-            {'😊' if predicted_sentiment[0] == 'Positive' else '😔'}</p>
-        </div>
-        """, unsafe_allow_html=True)
+# Example texts
+examples = [
+    "I absolutely loved the movie! The acting was superb and the plot kept me engaged throughout.",
+    "The customer service was terrible. I waited for hours and still didn't get my issue resolved.",
+    "The new restaurant in town is okay. The food is decent but a bit overpriced.",
+    "I can't believe how amazing this product is! It has completely changed my life for the better."
+]
 
-with tab1:
-    text_input = st.text_area('Enter your text here:', height=150, 
-                              placeholder="Type or paste your text for analysis...")
-    
-    if st.button('Analyze Sentiment'):
-        if text_input.strip():
-            predict_and_display(text_input)
-        else:
-            st.error('Please enter some text.')
+# Two columns layout
+col1, col2 = st.columns([2, 1])
 
-with tab2:
-    examples = [
-        "I absolutely loved the movie! The acting was superb.",
-        "The customer service was terrible. I waited for hours.",
-        "The new restaurant is okay. The food is decent but overpriced.",
-        "This product has completely changed my life for the better!"
-    ]
-    
-    for i, example in enumerate(examples, 1):
-        col1, col2 = st.columns([3, 1])
-        with col1:
-            st.text_area(f"Example {i}", example, height=100, key=f"example_{i}")
-        with col2:
-            if st.button('Try', key=f"button_{i}"):
-                predict_and_display(example)
+with col1:
+    text_input = st.text_area(
+        "Enter text to analyze:",
+        value=st.session_state.text_input,
+        height=150,
+        key="text_input_area"
+    )
+
+with col2:
+    st.write("**Try an example:**")
+    for i, example in enumerate(examples):
+        if st.button(f"Example {i+1}", key=f"example_{i}"):
+            st.session_state.text_input = example
+            st.experimental_rerun()
+
+# Analyze button
+if st.button('Analyze Sentiment', type='primary'):
+    if text_input.strip() == '':
+        st.error('Please enter some text.')
+    else:
+        with st.spinner('Analyzing...'):
+            # Preprocess and predict
+            preprocessed_text = preprocess_text(text_input)
+            preprocessed_text_counts = vectorizer.transform([preprocessed_text])
+            predicted_sentiment = predict(preprocessed_text_counts)[0]
+            
+            # Display result
+            sentiment_html = f"""
+            <div class="sentiment-box {'positive' if predicted_sentiment == 'Positive' else 'negative'}">
+                <h3>Sentiment: {predicted_sentiment}</h3>
+                <p>{'😊 The text appears to be positive.' if predicted_sentiment == 'Positive' else '😔 The text appears to be negative.'}</p>
+            </div>
+            """
+            st.markdown(sentiment_html, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
-    st.markdown("### About")
-    st.markdown("SentBayes uses Naive Bayes to classify text sentiment as Positive or Negative.")
+    st.title("About")
+    st.info("""
+    This app uses a Naive Bayes model to analyze the sentiment of text.
+    Enter your text or try one of the examples to see how it works!
+    """)
     
-    st.markdown("### Accuracy")
-    st.markdown("88% accuracy on test data")
+    st.title("How it works")
+    st.write("""
+    1. Enter text or select an example
+    2. Click 'Analyze Sentiment'
+    3. Get instant sentiment prediction
+    """)
     
-    st.markdown("### Creator")
-    st.markdown("Sidharth")
-    
-    st.markdown("### Links")
-    st.markdown("[GitHub Repository](https://github.com/yourusername/sentbayes)")
+    st.title("Created by")
+    st.info("Sidharth")
