@@ -96,7 +96,7 @@ with tab2:
 st.sidebar.title("About")
 st.sidebar.info(
     "This app uses a Naive Bayes model to predict the sentiment of text. "
-    "It classifies text as either Positive or Negative."
+    "It classifies text as either Positive, Negative, or Neutral."
 )
 
 # Add your name or team name
