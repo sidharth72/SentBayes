@@ -7,14 +7,16 @@ import joblib
 from preprocess import preprocess_text, download_nltk_data
 from predict import predict
 
+
+# Set page config
+st.set_page_config(page_title="Sentiment Analysis App", page_icon="😊", layout="wide")
+
+
 # Ensure NLTK data is downloaded
 download_nltk_data()
 
 # Load the vectorizer
 vectorizer = joblib.load('model/tfidf_vec.pkl')
-
-# Set page config
-st.set_page_config(page_title="Sentiment Analysis App", page_icon="😊", layout="wide")
 
 # Custom CSS
 st.markdown("""
